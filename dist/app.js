@@ -26,6 +26,8 @@ const swaggerPath = path_1.default.join(__dirname, "../docs/swagger.yaml");
 const swaggerDocument = yamljs_1.default.load(swaggerPath);
 /** Repo root `frontend/` — sibling of `backend/` (works locally and on Render full-repo clone). */
 const frontendRoot = path_1.default.join(__dirname, "..", "..", "frontend");
+const localhostOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+const allowedOrigins = new Set(env_1.env.clientUrls);
 app.use((0, helmet_1.default)({
     contentSecurityPolicy: {
         directives: {
@@ -43,7 +45,15 @@ app.use((0, helmet_1.default)({
     }
 }));
 app.use((0, cors_1.default)({
-    origin: env_1.env.clientUrls.length === 1 ? env_1.env.clientUrls[0] : env_1.env.clientUrls,
+    origin(origin, callback) {
+        // Allow server-to-server/curl requests without Origin.
+        if (!origin)
+            return callback(null, true);
+        if (allowedOrigins.has(origin) || localhostOrigin.test(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error(`CORS blocked origin: ${origin}`));
+    },
     credentials: true
 }));
 app.use(express_1.default.json());
