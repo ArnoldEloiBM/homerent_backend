@@ -23,6 +23,7 @@ const swaggerDocument = YAML.load(swaggerPath);
 /** Repo root `frontend/` — sibling of `backend/` (works locally and on Render full-repo clone). */
 const frontendRoot = path.join(__dirname, "..", "..", "frontend");
 const localhostOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+const vercelPreviewOrigin = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
 const allowedOrigins = new Set(env.clientUrls);
 
 app.use(
@@ -48,7 +49,11 @@ app.use(
     origin(origin, callback) {
       // Allow server-to-server/curl requests without Origin.
       if (!origin) return callback(null, true);
-      if (allowedOrigins.has(origin) || localhostOrigin.test(origin)) {
+      if (
+        allowedOrigins.has(origin) ||
+        localhostOrigin.test(origin) ||
+        vercelPreviewOrigin.test(origin)
+      ) {
         return callback(null, true);
       }
       return callback(new Error(`CORS blocked origin: ${origin}`));
