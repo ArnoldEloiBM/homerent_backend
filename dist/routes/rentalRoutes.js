@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const rentalController_1 = require("../controllers/rentalController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.post("/", auth_1.requireAuth, (0, auth_1.requireRole)("tenant"), rentalController_1.createRental);
+router.get("/my", auth_1.requireAuth, (0, auth_1.requireRole)("tenant", "landlord"), rentalController_1.myRentals);
+router.put("/:id/approve", auth_1.requireAuth, (0, auth_1.requireRole)("landlord"), rentalController_1.approveRental);
+router.put("/:id/reject", auth_1.requireAuth, (0, auth_1.requireRole)("landlord"), rentalController_1.rejectRental);
+router.put("/:id/terminate", auth_1.requireAuth, (0, auth_1.requireRole)("landlord"), rentalController_1.terminateRental);
+router.put("/:id/cancel", auth_1.requireAuth, (0, auth_1.requireRole)("tenant"), rentalController_1.cancelRental);
+exports.default = router;

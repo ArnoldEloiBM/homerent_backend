@@ -1,0 +1,185 @@
+// HomeRent — mirrors docs/schema.sql and src/scripts/initDb.ts
+// Run from backend/: npx prisma validate | npx prisma generate | npx prisma db pull
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  tenant
+  landlord
+  admin
+}
+
+enum ApplicationStatus {
+  pending
+  approved
+  rejected
+}
+
+enum RentalStatus {
+  pending
+  active
+  cancelled
+  rejected
+}
+
+enum PaymentStatus {
+  pending
+  approved
+  rejected
+}
+
+model User {
+  id               Int      @id @default(autoincrement())
+  name             String   @db.VarChar(120)
+  email            String   @unique @db.VarChar(180)
+  password         String   @db.Text
+  role             UserRole
+  isVerified       Boolean  @default(false) @map("is_verified")
+  isSuspended      Boolean  @default(false) @map("is_suspended")
+  profileImageUrl  String?  @map("profile_image_url") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  landlordProperties      Property[]     @relation("LandlordProperties")
+  tenantRentals           Rental[]       @relation("RentalTenant")
+  sentMessages            Message[]
+  otpCodes                OtpCode[]
+  conversationsAsTenant   Conversation[] @relation("ConversationTenant")
+  conversationsAsLandlord Conversation[] @relation("ConversationLandlord")
+  conversationReads       ConversationRead[]
+
+  @@map("users")
+}
+
+model LandlordApplication {
+  id          Int               @id @default(autoincrement())
+  name        String            @db.VarChar(120)
+  email       String            @unique @db.VarChar(180)
+  phone       String            @db.VarChar(40)
+  idCardImage String            @map("id_card_image")
+  status      ApplicationStatus @default(pending)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("landlord_applications")
+}
+
+model Property {
+  id          Int      @id @default(autoincrement())
+  landlordId  Int      @map("landlord_id")
+  title       String   @db.VarChar(180)
+  price       Decimal  @db.Decimal(12, 2)
+  location    String   @db.VarChar(255)
+  bedrooms    Int
+  bathrooms   Int
+  area        String?  @db.VarChar(120)
+  description String?  @db.Text
+  imageUrl    String   @map("image_url")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  landlord      User           @relation("LandlordProperties", fields: [landlordId], references: [id])
+  rentals       Rental[]
+  conversations Conversation[]
+
+  @@index([landlordId], map: "idx_properties_landlord_id")
+  @@map("properties")
+}
+
+model Rental {
+  id          Int          @id @default(autoincrement())
+  tenantId    Int          @map("tenant_id")
+  propertyId  Int          @map("property_id")
+  startDate   DateTime     @map("start_date") @db.Date
+  endDate     DateTime     @map("end_date") @db.Date
+  totalAmount Decimal      @map("total_amount") @db.Decimal(12, 2)
+  status      RentalStatus @default(pending)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant   User      @relation("RentalTenant", fields: [tenantId], references: [id])
+  property Property  @relation(fields: [propertyId], references: [id])
+  payments Payment[]
+
+  @@unique([tenantId, propertyId, startDate], map: "rentals_tenant_property_start_unique")
+  @@index([tenantId], map: "idx_rentals_tenant_id")
+  @@index([propertyId], map: "idx_rentals_property_id")
+  @@map("rentals")
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  rentalId      Int           @map("rental_id")
+  amount        Decimal       @db.Decimal(12, 2)
+  paidAmount    Decimal       @default(0) @map("paid_amount") @db.Decimal(12, 2)
+  proofImageUrl String        @map("proof_image_url")
+  status        PaymentStatus @default(pending)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  rental Rental @relation(fields: [rentalId], references: [id])
+
+  @@index([rentalId], map: "idx_payments_rental_id")
+  @@map("payments")
+}
+
+model Conversation {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int?     @map("tenant_id")
+  landlordId    Int      @map("landlord_id")
+  propertyId    Int?     @map("property_id")
+  adminLandlord Boolean  @default(false) @map("admin_landlord")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant   User?     @relation("ConversationTenant", fields: [tenantId], references: [id])
+  landlord User      @relation("ConversationLandlord", fields: [landlordId], references: [id])
+  property Property? @relation(fields: [propertyId], references: [id])
+  messages Message[]
+  reads    ConversationRead[]
+
+  @@map("conversations")
+}
+
+model ConversationRead {
+  userId         Int      @map("user_id")
+  conversationId Int    @map("conversation_id")
+  lastReadAt     DateTime @default(now()) @map("last_read_at") @db.Timestamptz(6)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, conversationId])
+  @@map("conversation_reads")
+}
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  conversationId Int      @map("conversation_id")
+  senderId       Int      @map("sender_id")
+  content        String?  @db.Text
+  imageUrl       String?  @map("image_url")
+  videoUrl       String?  @map("video_url")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId], map: "idx_messages_conversation_id")
+  @@index([senderId], map: "idx_messages_sender_id")
+  @@map("messages")
+}
+
+model OtpCode {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  code      String   @db.VarChar(6)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_codes")
+}

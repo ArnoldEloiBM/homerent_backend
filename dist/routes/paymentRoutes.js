@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const paymentController_1 = require("../controllers/paymentController");
+const auth_1 = require("../middleware/auth");
+const upload_1 = require("../middleware/upload");
+const router = (0, express_1.Router)();
+router.get("/my", auth_1.requireAuth, (0, auth_1.requireRole)("tenant"), paymentController_1.listMyPayments);
+router.get("/tenants", auth_1.requireAuth, (0, auth_1.requireRole)("landlord"), paymentController_1.listTenantEarnings);
+router.post("/", auth_1.requireAuth, (0, auth_1.requireRole)("tenant"), upload_1.upload.single("proof"), paymentController_1.createPayment);
+router.put("/:id/approve", auth_1.requireAuth, (0, auth_1.requireRole)("landlord"), paymentController_1.approvePayment);
+router.put("/:id/reject", auth_1.requireAuth, (0, auth_1.requireRole)("landlord"), paymentController_1.rejectPayment);
+router.get("/", auth_1.requireAuth, (0, auth_1.requireRole)("landlord"), paymentController_1.listPayments);
+exports.default = router;

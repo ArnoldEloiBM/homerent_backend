@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const applicationController_1 = require("../controllers/applicationController");
+const auth_1 = require("../middleware/auth");
+const upload_1 = require("../middleware/upload");
+const router = (0, express_1.Router)();
+router.post("/", upload_1.upload.single("idCard"), applicationController_1.applyLandlord);
+router.get("/", auth_1.requireAuth, (0, auth_1.requireRole)("admin"), applicationController_1.listApplications);
+router.put("/:id/approve", auth_1.requireAuth, (0, auth_1.requireRole)("admin"), applicationController_1.approveApplication);
+router.put("/:id/reject", auth_1.requireAuth, (0, auth_1.requireRole)("admin"), applicationController_1.rejectApplication);
+exports.default = router;

@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const propertyController_1 = require("../controllers/propertyController");
+const auth_1 = require("../middleware/auth");
+const upload_1 = require("../middleware/upload");
+const router = (0, express_1.Router)();
+router.post("/", auth_1.requireAuth, (0, auth_1.requireRole)("landlord"), upload_1.upload.single("image"), propertyController_1.createProperty);
+router.get("/", auth_1.optionalAuth, propertyController_1.listProperties);
+router.get("/:id", propertyController_1.getPropertyById);
+exports.default = router;

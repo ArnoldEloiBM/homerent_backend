@@ -1,0 +1,257 @@
+openapi: 3.0.3
+info:
+  title: HomeRent API
+  version: 1.0.0
+  description: Production-ready backend API for HomeRent rental platform.
+servers:
+  - url: http://localhost:8085
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+  /auth/register:
+    post:
+      summary: Register tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+      responses: { "201": { description: Created } }
+  /auth/verify-otp:
+    post:
+      summary: Verify tenant OTP
+      responses: { "200": { description: Verified } }
+  /auth/resend-otp:
+    post:
+      summary: Resend OTP
+      responses: { "200": { description: Sent } }
+  /auth/login:
+    post:
+      summary: Login by email or name
+      responses: { "200": { description: Logged in } }
+  /auth/me/profile-image:
+    post:
+      summary: Tenant or landlord upload profile photo
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image: { type: string, format: binary }
+      responses: { "200": { description: Updated user } }
+    delete:
+      summary: Tenant or landlord remove profile photo
+      security: [{ bearerAuth: [] }]
+      responses: { "200": { description: Updated user } }
+  /applications:
+    post:
+      summary: Landlord application with ID card upload
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, email, phone, idCard]
+              properties:
+                name: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                idCard: { type: string, format: binary }
+      responses: { "201": { description: Created } }
+    get:
+      summary: Admin list applications
+      security: [{ bearerAuth: [] }]
+      responses: { "200": { description: OK } }
+  /applications/{id}/approve:
+    put:
+      summary: Admin approve landlord application
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: Approved } }
+  /applications/{id}/reject:
+    put:
+      summary: Admin reject landlord application
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: Rejected } }
+  /users:
+    get:
+      summary: Admin list all users
+      security: [{ bearerAuth: [] }]
+      responses: { "200": { description: OK } }
+  /users/{id}/suspend:
+    put:
+      summary: Admin suspend a user (not self, not admins)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: Suspended } }
+  /users/{id}/unsuspend:
+    put:
+      summary: Admin unsuspend a user
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: Unsuspended } }
+  /properties:
+    post:
+      summary: Landlord add property with image upload
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, price, location, bedrooms, bathrooms, image]
+              properties:
+                title: { type: string }
+                price: { type: number }
+                location: { type: string }
+                bedrooms: { type: integer }
+                bathrooms: { type: integer }
+                area: { type: string }
+                description: { type: string }
+                image: { type: string, format: binary }
+      responses: { "201": { description: Created } }
+    get:
+      summary: List properties
+      responses: { "200": { description: OK } }
+  /properties/{id}:
+    get:
+      summary: Get property details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: OK } }
+  /rentals:
+    post:
+      summary: Tenant rent a property
+      security: [{ bearerAuth: [] }]
+      responses: { "201": { description: Created } }
+  /rentals/{id}/cancel:
+    put:
+      summary: Tenant cancel rental
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: Cancelled } }
+  /rentals/{id}/terminate:
+    put:
+      summary: Landlord end an active rental
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: Rental ended } }
+  /rentals/my:
+    get:
+      summary: Tenant or landlord view rentals
+      security: [{ bearerAuth: [] }]
+      responses: { "200": { description: OK } }
+  /payments/my:
+    get:
+      summary: Tenant list own payment proofs
+      security: [{ bearerAuth: [] }]
+      responses: { "200": { description: OK } }
+  /payments/tenants:
+    get:
+      summary: Landlord earnings — tenants list and payment history
+      security: [{ bearerAuth: [] }]
+      responses: { "200": { description: OK } }
+  /payments/{id}/approve:
+    put:
+      summary: Landlord confirm receipt of payment proof
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: Approved } }
+  /payments/{id}/reject:
+    put:
+      summary: Landlord reject payment proof
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: Rejected } }
+  /payments:
+    post:
+      summary: Tenant upload payment proof
+      security: [{ bearerAuth: [] }]
+      responses: { "201": { description: Created } }
+    get:
+      summary: Landlord view payments
+      security: [{ bearerAuth: [] }]
+      responses: { "200": { description: OK } }
+  /messages:
+    post:
+      summary: Send text and/or image or video (multipart)
+      security: [{ bearerAuth: [] }]
+      responses: { "201": { description: Created } }
+  /messages/{conversationId}:
+    get:
+      summary: Get one-to-one conversation messages
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: OK } }
+  /messages/admin/start:
+    post:
+      summary: Admin start chat with landlord
+      security: [{ bearerAuth: [] }]
+      responses: { "201": { description: Created } }
+  /upload:
+    post:
+      summary: Generic Cloudinary upload endpoint
+      security: [{ bearerAuth: [] }]
+      responses: { "200": { description: Uploaded } }

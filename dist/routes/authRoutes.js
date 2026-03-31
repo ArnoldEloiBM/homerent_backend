@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authController_1 = require("../controllers/authController");
+const auth_1 = require("../middleware/auth");
+const upload_1 = require("../middleware/upload");
+const router = (0, express_1.Router)();
+router.post("/register", authController_1.registerTenant);
+router.post("/verify-otp", authController_1.verifyTenantOtp);
+router.post("/resend-otp", authController_1.resendOtp);
+router.post("/forgot-password", authController_1.forgotPassword);
+router.post("/reset-password", authController_1.resetPassword);
+router.post("/change-password", auth_1.requireAuth, authController_1.changePassword);
+router.post("/login", authController_1.login);
+router.post("/me/profile-image", auth_1.requireAuth, (0, auth_1.requireRole)("tenant", "landlord"), upload_1.upload.single("image"), authController_1.uploadProfileImage);
+router.delete("/me/profile-image", auth_1.requireAuth, (0, auth_1.requireRole)("tenant", "landlord"), authController_1.deleteProfileImage);
+exports.default = router;
