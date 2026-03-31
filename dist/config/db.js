@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.db = void 0;
+exports.checkDbConnection = checkDbConnection;
 const pg_1 = require("pg");
 const env_1 = require("./env");
 /** Cloud Postgres (Supabase direct, pooler, Neon, etc.) needs TLS; pooler hostnames may omit "supabase.co". */
@@ -26,3 +27,6 @@ exports.db = new pg_1.Pool({
     connectionString: env_1.env.databaseUrl,
     ssl: sslConfig(env_1.env.databaseUrl)
 });
+async function checkDbConnection() {
+    await exports.db.query("SELECT 1");
+}

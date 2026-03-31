@@ -26,7 +26,7 @@ for (const key of required) {
 const portFromEnv = Number(process.env.PORT);
 exports.env = {
     /** Render/Heroku/etc. set PORT; local dev uses 7501 when unset */
-    port: Number.isFinite(portFromEnv) && portFromEnv > 0 ? portFromEnv : 7501,
+    port: Number.isFinite(portFromEnv) && portFromEnv > 0 ? portFromEnv : 8085,
     databaseUrl: process.env.DATABASE_URL,
     jwtSecret: process.env.JWT_SECRET,
     cloudinary: {
